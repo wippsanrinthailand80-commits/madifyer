@@ -1,0 +1,118 @@
+# MAD EL OS - Package list
+# Custom Arch Linux ISO with Thai language support and reduced security tools
+
+# === Base system packages ===
+archlinux-keyring
+bash
+btrfs-progs
+coreutils
+cryptsetup
+device-mapper
+dhcpcd
+diffutils
+e2fsprogs
+efibootmgr
+exfat-utils
+f2fs-tools
+fatresize
+geoip
+gettext
+gzip
+hwids
+inetutils
+iproute
+iputils
+less
+licenses
+linux
+linux-firmware
+logrotate
+lvm2
+man-db
+man-pages
+mdadm
+nano
+nfs-utils
+ntfs-3g
+os-prober
+pacman
+pciutils
+pcmciautils
+pcre2
+perl
+polkit
+procps-ng
+psmisc
+refind-efi
+reiserfsprogs
+rsync
+s-nail
+sed
+shadow
+smartmontools
+squashfs-tools
+sudo
+sysfsutils
+systemd
+tar
+texinfo
+usb_modeswitch
+usbutils
+util-linux
+which
+wpa_supplicant
+xfsprogs
+
+# === ISO boot support ===
+mkinitcpio-archiso
+
+# === Essential security tools (reduced set) ===
+# - nmap: network discovery and security auditing
+# - rkhunter: rootkit detection
+# - lynis: security auditing and hardening
+# - gnupg: encryption and signing
+# - openssh: secure remote access
+# - nftables: modern firewall framework
+# - fail2ban: intrusion prevention via log monitoring
+# - ca-certificates-utils: TLS certificate management
+nmap
+rkhunter
+lynis
+gnupg
+openssh
+nftables
+fail2ban
+ca-certificates-utils
+
+# === Thai language support ===
+# Locale (enables th_TH.UTF-8 in locale.gen)
+glibc
+
+# Thai text processing library
+libthai
+libthai-extra
+libdatrie
+
+# Input method framework with Thai predictive input
+fcitx5
+fcitx5-libthai
+xkeyboard-config
+
+# Fonts with proper Thai OpenType rendering (prevents floating/sinking vowels)
+# - noto-fonts: Contains NotoSansThai with GPOS/GDEF tables for correct mark positioning
+#   HarfBuzz uses these tables to properly position:
+#     - MAI EK/THO/TRI/CHATTAWA tone marks (U+0E48-U+0E4B)
+#     - Vowel signs: SARA I/II/UE/UUE (U+0E34-U+0E37)
+#     - MAITAIKHU (U+0E47) and NIKHAHIT (U+0E4D)
+#     - SARA AM decomposition (U+0E33 -> U+0E4D U+0E32)
+# - ttf-dejavu: Fallback font with Thai glyph coverage
+noto-fonts
+ttf-dejavu
+
+# Text shaping engine and font configuration
+harfbuzz
+harfbuzz-icu
+fontconfig
+
+# Console font with Thai glyph support
+terminus-font

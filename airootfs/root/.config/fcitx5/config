@@ -1,0 +1,3 @@
+[General]
+# Fcitx5 configuration for Thai input
+ToggleIM=ctrl+space

@@ -1,0 +1,136 @@
+name: Test monoshine distro
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, amd64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq debootstrap qemu-user-static xz-utils
+
+      - name: Build monoshine for testing
+        env:
+          DEBIAN_ARCH: ${{ matrix.arch }}
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Test rootfs
+        env:
+          DEBIAN_ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p /tmp/monoshine-test
+          tar -xJf out/monoshine-${{ matrix.arch }}.tar.xz -C /tmp/monoshine-test
+          ROOTFS=/tmp/monoshine-test
+          QEMU="/usr/bin/qemu-${{ matrix.arch }}-static"
+
+          echo "=== Checking essential files exist ==="
+          for f in /etc/hostname /etc/locale.gen /etc/environment /etc/fonts/conf.d/99-thai.conf /usr/local/bin/monoshine-info; do
+            if [ -f "$ROOTFS$f" ]; then
+              echo "PASS: $f exists"
+            else
+              echo "FAIL: $f missing"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "=== Verifying hostname ==="
+          if grep -q "monoshine" "$ROOTFS/etc/hostname"; then
+            echo "PASS: hostname is monoshine"
+          else
+            echo "FAIL: hostname not set correctly"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Verifying Thai locale ==="
+          if grep -q "th_TH.UTF-8" "$ROOTFS/etc/locale.gen"; then
+            echo "PASS: Thai locale configured in locale.gen"
+          else
+            echo "FAIL: Thai locale not configured"
+            exit 1
+          fi
+
+          if grep -q "th_TH.UTF-8" "$ROOTFS/etc/environment"; then
+            echo "PASS: Thai environment configured"
+          else
+            echo "FAIL: Thai environment not configured"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Verifying Thai font config ==="
+          if grep -q "Noto Sans Thai" "$ROOTFS/etc/fonts/conf.d/99-thai.conf"; then
+            echo "PASS: Thai font config references Noto Sans Thai"
+          else
+            echo "FAIL: Thai font config missing Noto Sans Thai reference"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Verifying package list contents ==="
+          for pkg in nmap rkhunter lynis gnupg fail2ban clamav; do
+            if grep -q "^${pkg}$" packages.list; then
+              echo "PASS: ${pkg} is in package list"
+            else
+              echo "FAIL: ${pkg} is missing from package list"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "=== Verifying Thai packages ==="
+          for pkg in locales thai-language-data fonts-noto-core ibus-libthai; do
+            if grep -q "^${pkg}$" packages.list; then
+              echo "PASS: ${pkg} is in package list"
+            else
+              echo "FAIL: ${pkg} is missing from package list"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "=== Testing chroot execution ==="
+          if [ "${{ matrix.arch }}" = "amd64" ]; then
+            sudo chroot "$ROOTFS" /usr/local/bin/monoshine-info
+          else
+            sudo chroot "$ROOTFS" /usr/bin/qemu-${{ matrix.arch }}-static /usr/local/bin/monoshine-info
+          fi
+
+          echo ""
+          echo "=== Checking installed package count ==="
+          if [ "${{ matrix.arch }}" = "amd64" ]; then
+            PKG_COUNT=$(sudo chroot "$ROOTFS" dpkg -l 2>/dev/null | grep -c '^ii')
+          else
+            PKG_COUNT=$(sudo chroot "$ROOTFS" /usr/bin/qemu-${{ matrix.arch }}-static /usr/bin/dpkg -l 2>/dev/null | grep -c '^ii')
+          fi
+          echo "Installed packages: $PKG_COUNT"
+          if [ "$PKG_COUNT" -lt 50 ]; then
+            echo "FAIL: Too few packages installed ($PKG_COUNT)"
+            exit 1
+          fi
+          echo "PASS: Sufficient packages installed ($PKG_COUNT)"
+
+          echo ""
+          echo "=== Cleaning up ==="
+          rm -rf "$ROOTFS"
+
+          echo ""
+          echo "=== All tests passed ==="

@@ -1,0 +1,6 @@
+# Thai locale (required for Thai language environment)
+th_TH.UTF-8 UTF-8
+th_TH.GB18030 GB18030
+# English locale (base system fallback)
+en_US.UTF-8 UTF-8
+en_US ISO-8859-1
